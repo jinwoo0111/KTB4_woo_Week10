@@ -1,4 +1,5 @@
 import { request } from './http.js'
+import { mapUploadResponse } from './mappers.js'
 
 function assertFile(file) {
   if (typeof File === 'undefined' || !(file instanceof File)) {
@@ -18,7 +19,7 @@ async function uploadImage(category, file) {
     auth: 'required',
   })
 
-  return data?.path ?? null
+  return mapUploadResponse(data)
 }
 
 export function uploadProfileImage(file) {

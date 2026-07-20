@@ -1,4 +1,5 @@
 import { request } from './http.js'
+import { mapLoginResponse, mapSignupResponse } from './mappers.js'
 
 function assertOptionalFile(file) {
   if (
@@ -34,9 +35,7 @@ export async function signup({
     auth: 'none',
   })
 
-  return {
-    userId: data?.user_id ?? null,
-  }
+  return mapSignupResponse(data)
 }
 
 export async function login({ email, password }) {
@@ -46,8 +45,5 @@ export async function login({ email, password }) {
     auth: 'none',
   })
 
-  return {
-    userId: data?.user_id ?? null,
-    authorization,
-  }
+  return mapLoginResponse(data, authorization)
 }
