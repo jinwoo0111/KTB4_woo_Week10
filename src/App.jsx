@@ -9,6 +9,7 @@ import MyPageLayout from "./layouts/MyPageLayout.jsx";
 import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import PasswordEditPage from "./pages/PasswordEditPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import UserEditPage from "./pages/UserEditPage.jsx";
@@ -30,16 +31,7 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route path="mypage" element={<MyPageLayout />}>
             <Route index element={<UserEditPage />} />
-            <Route
-              path="password"
-              element={(
-                <RoutePlaceholder
-                  eyebrow="MY PAGE / 02"
-                  title="비밀번호 수정"
-                  description="비밀번호 수정 화면이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route path="password" element={<PasswordEditPage />} />
           </Route>
         </Route>
 
