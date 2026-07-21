@@ -8,10 +8,11 @@ import {
   mapPostWriteResponse,
 } from './mappers.js'
 
-export async function getPosts({ cursor, size } = {}) {
+export async function getPosts({ cursor, size, signal } = {}) {
   const { data } = await request('/posts', {
     query: { cursor, size },
     auth: 'none',
+    signal,
   })
 
   return mapPostListResponse(data)

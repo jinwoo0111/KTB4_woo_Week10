@@ -10,6 +10,7 @@ import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PasswordEditPage from "./pages/PasswordEditPage.jsx";
+import PostListPage from "./pages/PostListPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import UserEditPage from "./pages/UserEditPage.jsx";
@@ -36,16 +37,7 @@ function App() {
         </Route>
 
         <Route path="posts">
-          <Route
-            index
-            element={(
-              <RoutePlaceholder
-                eyebrow="COMMUNITY"
-                title="게시글 목록"
-                description="커뮤니티 게시글 목록이 이 위치에 연결됩니다."
-              />
-            )}
-          />
+          <Route index element={<PostListPage />} />
           <Route element={<RequireAuth />}>
             <Route
               path="new"
