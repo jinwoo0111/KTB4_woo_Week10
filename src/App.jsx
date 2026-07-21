@@ -6,22 +6,14 @@ import {
 import AppLayout from "./layouts/AppLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import MyPageLayout from "./layouts/MyPageLayout.jsx";
+import HomePage from "./pages/HomePage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 
 function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route
-          index
-          element={(
-            <RoutePlaceholder
-              eyebrow="HOME"
-              title="RESCENE FAN COMMUNITY"
-              description="홈 페이지가 이 위치에 연결됩니다."
-            />
-          )}
-        />
+        <Route index element={<HomePage />} />
         <Route
           path="artist"
           element={(
