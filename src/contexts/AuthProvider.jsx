@@ -1,134 +1,254 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { login as requestLogin } from "../api/authApi.js";
 import { ApiError } from "../api/ApiError.js";
 import { getCurrentUser } from "../api/userApi.js";
 import {
   getAccessToken,
   removeAccessToken,
+  saveAccessToken,
 } from "../utils/tokenStorage.js";
 import { AUTH_STATUS, AuthContext } from "./AuthContext.js";
 
-function createInitialAuthState() {
-  const accessToken = getAccessToken();
-
+function createGuestAuthState() {
   return {
-    accessToken,
-    authStatus: accessToken
-      ? AUTH_STATUS.CHECKING
-      : AUTH_STATUS.GUEST,
+    accessToken: null,
+    authStatus: AUTH_STATUS.GUEST,
     currentUser: null,
     authError: null,
   };
 }
 
+function createInitialAuthState() {
+  const accessToken = getAccessToken();
+
+  if (!accessToken) {
+    return createGuestAuthState();
+  }
+
+  return {
+    accessToken,
+    authStatus: AUTH_STATUS.CHECKING,
+    currentUser: null,
+    authError: null,
+  };
+}
+
+function assertCurrentUser(currentUser) {
+  if (!currentUser) {
+    throw new ApiError({ message: "current_user_missing" });
+  }
+}
+
+function ignoreHandledAuthError() {
+  // startAuthCheck가 오류를 guest 상태 또는 authError에 이미 반영한다.
+}
+
 function AuthProvider({ children }) {
   const [authState, setAuthState] = useState(createInitialAuthState);
-  const [authCheckAttempt, setAuthCheckAttempt] = useState(0);
   const authCheckRef = useRef(null);
 
-  const retryAuthCheck = useCallback(() => {
-    authCheckRef.current = null;
+  const handleAuthCheckError = useCallback((error, tokenBeingChecked) => {
+    if (error instanceof ApiError && error.status === 401) {
+      removeAccessToken();
+
+      setAuthState((currentState) => {
+        if (currentState.accessToken !== tokenBeingChecked) {
+          return currentState;
+        }
+
+        return createGuestAuthState();
+      });
+      return;
+    }
 
     setAuthState((currentState) => {
-      if (!currentState.accessToken) {
+      if (currentState.accessToken !== tokenBeingChecked) {
         return currentState;
+      }
+
+      if (
+        currentState.authStatus === AUTH_STATUS.AUTHENTICATED &&
+        currentState.currentUser
+      ) {
+        return {
+          ...currentState,
+          authError: error,
+        };
       }
 
       return {
         ...currentState,
         authStatus: AUTH_STATUS.CHECKING,
         currentUser: null,
-        authError: null,
+        authError: error,
       };
     });
-    setAuthCheckAttempt((currentAttempt) => currentAttempt + 1);
   }, []);
 
-  useEffect(() => {
-    const tokenBeingChecked = authState.accessToken;
-
-    if (!tokenBeingChecked) {
-      return undefined;
+  const startAuthCheck = useCallback((accessToken, { force = false } = {}) => {
+    if (
+      !force &&
+      authCheckRef.current?.token === accessToken
+    ) {
+      return authCheckRef.current.promise;
     }
 
-    if (authCheckRef.current?.token !== tokenBeingChecked) {
-      authCheckRef.current = {
-        token: tokenBeingChecked,
-        promise: getCurrentUser(),
-      };
-    }
+    let authCheckPromise;
 
-    const currentAuthCheck = authCheckRef.current.promise;
-    let isActive = true;
-
-    currentAuthCheck
+    authCheckPromise = getCurrentUser()
       .then((currentUser) => {
-        if (!isActive) {
-          return;
+        if (authCheckRef.current?.promise !== authCheckPromise) {
+          throw new ApiError({ message: "auth_check_cancelled" });
         }
 
-        if (!currentUser) {
-          throw new ApiError({ message: "current_user_missing" });
-        }
+        assertCurrentUser(currentUser);
 
         setAuthState((currentState) => {
-          if (currentState.accessToken !== tokenBeingChecked) {
+          if (currentState.accessToken !== accessToken) {
             return currentState;
           }
 
           return {
-            accessToken: tokenBeingChecked,
+            accessToken,
             authStatus: AUTH_STATUS.AUTHENTICATED,
             currentUser,
             authError: null,
           };
         });
+
+        return currentUser;
       })
       .catch((error) => {
-        if (!isActive) {
-          return;
+        if (authCheckRef.current?.promise === authCheckPromise) {
+          handleAuthCheckError(error, accessToken);
         }
 
-        if (error instanceof ApiError && error.status === 401) {
-          removeAccessToken();
-
-          setAuthState((currentState) => {
-            if (currentState.accessToken !== tokenBeingChecked) {
-              return currentState;
-            }
-
-            return {
-              accessToken: null,
-              authStatus: AUTH_STATUS.GUEST,
-              currentUser: null,
-              authError: null,
-            };
-          });
-          return;
-        }
-
-        setAuthState((currentState) => {
-          if (currentState.accessToken !== tokenBeingChecked) {
-            return currentState;
-          }
-
-          return {
-            ...currentState,
-            authStatus: AUTH_STATUS.CHECKING,
-            currentUser: null,
-            authError: error,
-          };
-        });
+        throw error;
       });
 
-    return () => {
-      isActive = false;
+    authCheckRef.current = {
+      token: accessToken,
+      promise: authCheckPromise,
     };
-  }, [authState.accessToken, authCheckAttempt]);
 
-  const contextValue = {
+    return authCheckPromise;
+  }, [handleAuthCheckError]);
+
+  useEffect(() => {
+    if (!authState.accessToken) {
+      return;
+    }
+
+    startAuthCheck(authState.accessToken).catch(ignoreHandledAuthError);
+  }, [authState.accessToken, startAuthCheck]);
+
+  const retryAuthCheck = useCallback(() => {
+    const accessToken = authState.accessToken;
+
+    if (!accessToken) {
+      return;
+    }
+
+    setAuthState((currentState) => ({
+      ...currentState,
+      authStatus: currentState.currentUser
+        ? currentState.authStatus
+        : AUTH_STATUS.CHECKING,
+      authError: null,
+    }));
+
+    startAuthCheck(accessToken, { force: true }).catch(ignoreHandledAuthError);
+  }, [authState.accessToken, startAuthCheck]);
+
+  const login = useCallback(async (credentials) => {
+    const { authorization } = await requestLogin(credentials);
+
+    saveAccessToken(authorization);
+
+    const accessToken = getAccessToken();
+
+    if (!accessToken) {
+      removeAccessToken();
+      throw new Error("저장된 access token을 확인할 수 없습니다.");
+    }
+
+    setAuthState({
+      accessToken,
+      authStatus: AUTH_STATUS.CHECKING,
+      currentUser: null,
+      authError: null,
+    });
+
+    return startAuthCheck(accessToken, { force: true });
+  }, [startAuthCheck]);
+
+  const logout = useCallback(() => {
+    authCheckRef.current = null;
+    removeAccessToken();
+    setAuthState(createGuestAuthState());
+  }, []);
+
+  const refreshCurrentUser = useCallback(() => {
+    const accessToken = authState.accessToken;
+
+    if (!accessToken) {
+      throw new ApiError({
+        status: 401,
+        message: "authentication_required",
+      });
+    }
+
+    setAuthState((currentState) => ({
+      ...currentState,
+      authError: null,
+    }));
+
+    return startAuthCheck(accessToken, { force: true });
+  }, [authState.accessToken, startAuthCheck]);
+
+  const updateCurrentUser = useCallback((currentUser) => {
+    if (
+      !currentUser ||
+      typeof currentUser !== "object" ||
+      Array.isArray(currentUser)
+    ) {
+      throw new TypeError("갱신할 현재 사용자 정보가 올바르지 않습니다.");
+    }
+
+    setAuthState((currentState) => {
+      if (currentState.authStatus !== AUTH_STATUS.AUTHENTICATED) {
+        return currentState;
+      }
+
+      return {
+        ...currentState,
+        currentUser,
+        authError: null,
+      };
+    });
+  }, []);
+
+  const contextValue = useMemo(() => ({
     ...authState,
+    login,
+    logout,
+    refreshCurrentUser,
     retryAuthCheck,
-  };
+    updateCurrentUser,
+  }), [
+    authState,
+    login,
+    logout,
+    refreshCurrentUser,
+    retryAuthCheck,
+    updateCurrentUser,
+  ]);
 
   return (
     <AuthContext.Provider value={contextValue}>
