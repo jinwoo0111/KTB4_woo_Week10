@@ -30,7 +30,13 @@ function ConfirmModal({
 
     return () => {
       document.body.style.overflow = previousBodyOverflow;
-      previouslyFocusedElement?.focus();
+
+      if (
+        previouslyFocusedElement instanceof HTMLElement &&
+        previouslyFocusedElement.isConnected
+      ) {
+        previouslyFocusedElement.focus();
+      }
     };
   }, [isOpen]);
 
@@ -47,6 +53,8 @@ function ConfirmModal({
   function handleDialogKeyDown(event) {
     if (event.key === "Escape") {
       if (!isConfirming) {
+        event.preventDefault();
+        event.stopPropagation();
         onCancel();
       }
       return;
@@ -82,7 +90,7 @@ function ConfirmModal({
       <div
         ref={dialogRef}
         className="confirm-modal"
-        role="dialog"
+        role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}

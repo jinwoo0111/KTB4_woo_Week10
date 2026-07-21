@@ -6,12 +6,12 @@
   --color-primary-soft: #fbeaf1;
   --color-accent: #f3a9c2;
   --color-text: #2d2328;
-  --color-text-muted: #80757b;
+  --color-text-muted: #786d73;
   --color-border: #f0dde5;
   --color-danger: #b4233e;
   --color-danger-hover: #921d33;
   --color-overlay: rgba(45, 35, 40, 0.48);
-  --color-focus: rgba(200, 63, 115, 0.3);
+  --color-focus: #c83f73;
 
   --shadow-small: 0 4px 14px rgba(113, 48, 75, 0.06);
   --shadow-medium: 0 10px 30px rgba(113, 48, 75, 0.09);
@@ -136,5 +136,11 @@ ol {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
   }
 }

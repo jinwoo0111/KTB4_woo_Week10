@@ -4,6 +4,24 @@
   flex-direction: column;
 }
 
+.skip-link {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1100;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-small);
+  background-color: var(--color-text);
+  color: var(--color-surface);
+  font-size: 14px;
+  font-weight: 800;
+  transform: translateY(calc(-100% - var(--space-4)));
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 .app-layout__main {
   width: 100%;
   flex: 1;
