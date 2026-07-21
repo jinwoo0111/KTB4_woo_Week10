@@ -10,6 +10,7 @@ import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PasswordEditPage from "./pages/PasswordEditPage.jsx";
+import PostCreatePage from "./pages/PostCreatePage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
 import PostListPage from "./pages/PostListPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
@@ -40,16 +41,7 @@ function App() {
         <Route path="posts">
           <Route index element={<PostListPage />} />
           <Route element={<RequireAuth />}>
-            <Route
-              path="new"
-              element={(
-                <RoutePlaceholder
-                  eyebrow="COMMUNITY"
-                  title="게시글 작성"
-                  description="게시글 작성 폼이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route path="new" element={<PostCreatePage />} />
             <Route
               path=":postId/edit"
               element={(
