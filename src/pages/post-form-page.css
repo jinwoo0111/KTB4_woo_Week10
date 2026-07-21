@@ -4,6 +4,12 @@
   padding: 38px 0 88px;
 }
 
+.post-form-page--feedback {
+  min-height: 480px;
+  display: grid;
+  place-items: center;
+}
+
 .post-form-page__header {
   margin-bottom: 26px;
 }

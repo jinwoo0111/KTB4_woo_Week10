@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import PasswordEditPage from "./pages/PasswordEditPage.jsx";
 import PostCreatePage from "./pages/PostCreatePage.jsx";
 import PostDetailPage from "./pages/PostDetailPage.jsx";
+import PostEditPage from "./pages/PostEditPage.jsx";
 import PostListPage from "./pages/PostListPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
@@ -42,16 +43,7 @@ function App() {
           <Route index element={<PostListPage />} />
           <Route element={<RequireAuth />}>
             <Route path="new" element={<PostCreatePage />} />
-            <Route
-              path=":postId/edit"
-              element={(
-                <RoutePlaceholder
-                  eyebrow="COMMUNITY"
-                  title="게시글 수정"
-                  description="선택한 게시글의 수정 폼이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route path=":postId/edit" element={<PostEditPage />} />
           </Route>
           <Route path=":postId" element={<PostDetailPage />} />
         </Route>
