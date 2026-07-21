@@ -6,6 +6,7 @@ import {
 import AppLayout from "./layouts/AppLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import MyPageLayout from "./layouts/MyPageLayout.jsx";
+import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 
@@ -14,16 +15,7 @@ function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
-        <Route
-          path="artist"
-          element={(
-            <RoutePlaceholder
-              eyebrow="ARTIST"
-              title="아티스트 소개"
-              description="멤버 소개 페이지가 이 위치에 연결됩니다."
-            />
-          )}
-        />
+        <Route path="artist" element={<ArtistPage />} />
 
         <Route element={<GuestOnlyRoute />}>
           <Route element={<AuthLayout />}>
