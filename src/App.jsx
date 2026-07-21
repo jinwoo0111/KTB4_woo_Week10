@@ -1,12 +1,134 @@
 import { Route, Routes } from "react-router";
+import AppLayout from "./layouts/AppLayout.jsx";
+import AuthLayout from "./layouts/AuthLayout.jsx";
+import MyPageLayout from "./layouts/MyPageLayout.jsx";
+import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 
 function App() {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<h1>RESCENE FAN COMMUNITY</h1>}
-      />
+      <Route element={<AppLayout />}>
+        <Route
+          index
+          element={(
+            <RoutePlaceholder
+              eyebrow="HOME"
+              title="RESCENE FAN COMMUNITY"
+              description="홈 페이지가 이 위치에 연결됩니다."
+            />
+          )}
+        />
+        <Route
+          path="artist"
+          element={(
+            <RoutePlaceholder
+              eyebrow="ARTIST"
+              title="아티스트 소개"
+              description="멤버 소개 페이지가 이 위치에 연결됩니다."
+            />
+          )}
+        />
+
+        <Route element={<AuthLayout />}>
+          <Route
+            path="login"
+            element={(
+              <RoutePlaceholder
+                eyebrow="AUTH"
+                title="로그인"
+                description="로그인 폼이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+          <Route
+            path="signup"
+            element={(
+              <RoutePlaceholder
+                eyebrow="AUTH"
+                title="회원가입"
+                description="회원가입 폼이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+        </Route>
+
+        <Route path="mypage" element={<MyPageLayout />}>
+          <Route
+            index
+            element={(
+              <RoutePlaceholder
+                eyebrow="MY PAGE / 01"
+                title="회원정보 수정"
+                description="프로필과 회원정보 수정 화면이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+          <Route
+            path="password"
+            element={(
+              <RoutePlaceholder
+                eyebrow="MY PAGE / 02"
+                title="비밀번호 수정"
+                description="비밀번호 수정 화면이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+        </Route>
+
+        <Route path="posts">
+          <Route
+            index
+            element={(
+              <RoutePlaceholder
+                eyebrow="COMMUNITY"
+                title="게시글 목록"
+                description="커뮤니티 게시글 목록이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+          <Route
+            path="new"
+            element={(
+              <RoutePlaceholder
+                eyebrow="COMMUNITY"
+                title="게시글 작성"
+                description="게시글 작성 폼이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+          <Route
+            path=":postId"
+            element={(
+              <RoutePlaceholder
+                eyebrow="COMMUNITY"
+                title="게시글 상세"
+                description="선택한 게시글의 상세 화면이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+          <Route
+            path=":postId/edit"
+            element={(
+              <RoutePlaceholder
+                eyebrow="COMMUNITY"
+                title="게시글 수정"
+                description="선택한 게시글의 수정 폼이 이 위치에 연결됩니다."
+              />
+            )}
+          />
+        </Route>
+
+        <Route
+          path="*"
+          element={(
+            <RoutePlaceholder
+              eyebrow="404"
+              title="페이지를 찾을 수 없습니다"
+              description="요청한 주소에 연결된 페이지가 없습니다."
+            />
+          )}
+        />
+      </Route>
     </Routes>
   );
 }

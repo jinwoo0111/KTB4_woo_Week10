@@ -1,0 +1,29 @@
+.route-placeholder {
+  width: min(calc(100% - (var(--space-4) * 2)), var(--content-width));
+  margin: 0 auto;
+  padding: var(--space-16) 0;
+}
+
+.auth-layout__content .route-placeholder,
+.my-page-layout__content .route-placeholder {
+  width: 100%;
+  padding-top: 0;
+}
+
+.route-placeholder__eyebrow {
+  margin-bottom: var(--space-2);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.route-placeholder__title {
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.2;
+}
+
+.route-placeholder__description {
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+}
