@@ -1,4 +1,6 @@
 import { Link, NavLink } from "react-router";
+import { AUTH_STATUS } from "../../contexts/AuthContext.js";
+import { useAuth } from "../../hooks/useAuth.js";
 import HeaderProfileButton from "./HeaderProfileButton.jsx";
 import "./global-header.css";
 
@@ -14,7 +16,60 @@ function getNavigationClassName({ isActive }) {
     .join(" ");
 }
 
+function HeaderAuthControl({
+  authStatus,
+  currentUser,
+  authError,
+  onRetry,
+}) {
+  if (authStatus === AUTH_STATUS.CHECKING) {
+    if (authError) {
+      return (
+        <button
+          className="global-header__auth-state global-header__auth-state--error"
+          type="button"
+          title="로그인 상태 다시 확인"
+          aria-label="로그인 상태 확인에 실패했습니다. 다시 시도"
+          onClick={onRetry}
+        >
+          <span aria-hidden="true">!</span>
+        </button>
+      );
+    }
+
+    return (
+      <span
+        className="global-header__auth-state global-header__auth-state--checking"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="global-header__auth-spinner" aria-hidden="true" />
+        <span className="global-header__visually-hidden">
+          로그인 상태 확인 중
+        </span>
+      </span>
+    );
+  }
+
+  const isAuthenticated = authStatus === AUTH_STATUS.AUTHENTICATED;
+
+  return (
+    <HeaderProfileButton
+      isAuthenticated={isAuthenticated}
+      profileImage={isAuthenticated ? currentUser?.profileImage : null}
+      nickname={isAuthenticated ? currentUser?.nickname : ""}
+    />
+  );
+}
+
 function GlobalHeader() {
+  const {
+    authStatus,
+    currentUser,
+    authError,
+    retryAuthCheck,
+  } = useAuth();
+
   return (
     <header className="global-header">
       <div className="global-header__inner">
@@ -35,7 +90,12 @@ function GlobalHeader() {
           ))}
         </nav>
 
-        <HeaderProfileButton />
+        <HeaderAuthControl
+          authStatus={authStatus}
+          currentUser={currentUser}
+          authError={authError}
+          onRetry={retryAuthCheck}
+        />
       </div>
     </header>
   );
