@@ -10,6 +10,8 @@ import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
+import SignupPage from "./pages/SignupPage.jsx";
+import UserEditPage from "./pages/UserEditPage.jsx";
 
 function App() {
   return (
@@ -21,31 +23,13 @@ function App() {
         <Route element={<GuestOnlyRoute />}>
           <Route element={<AuthLayout />}>
             <Route path="login" element={<LoginPage />} />
-            <Route
-              path="signup"
-              element={(
-                <RoutePlaceholder
-                  eyebrow="AUTH"
-                  title="회원가입"
-                  description="회원가입 폼이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route path="signup" element={<SignupPage />} />
           </Route>
         </Route>
 
         <Route element={<RequireAuth />}>
           <Route path="mypage" element={<MyPageLayout />}>
-            <Route
-              index
-              element={(
-                <RoutePlaceholder
-                  eyebrow="MY PAGE / 01"
-                  title="회원정보 수정"
-                  description="프로필과 회원정보 수정 화면이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route index element={<UserEditPage />} />
             <Route
               path="password"
               element={(

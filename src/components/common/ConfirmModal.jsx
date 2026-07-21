@@ -8,6 +8,7 @@ function ConfirmModal({
   description = "이 작업은 되돌릴 수 없습니다.",
   confirmText = "확인",
   cancelText = "취소",
+  errorMessage = "",
   isConfirming = false,
   onConfirm = () => {},
   onCancel = () => {},
@@ -103,6 +104,12 @@ function ConfirmModal({
         <p id={descriptionId} className="confirm-modal__description">
           {description}
         </p>
+
+        {errorMessage && (
+          <p className="confirm-modal__error" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
         <div className="confirm-modal__actions">
           <button
