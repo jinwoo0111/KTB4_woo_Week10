@@ -269,7 +269,7 @@ function UserEditPage() {
         <section className="user-edit-card" aria-labelledby="user-edit-title">
           <div className="user-edit-card__topline">
             <span>PROFILE / 01</span>
-            <span className="user-edit-card__status">RESCENE</span>
+            <span className="user-edit-card__status">REMINE</span>
           </div>
 
           <div className="user-edit-card__summary">
