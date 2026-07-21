@@ -1,4 +1,8 @@
 import { Route, Routes } from "react-router";
+import {
+  GuestOnlyRoute,
+  RequireAuth,
+} from "./components/auth/AuthRouteGuard.jsx";
 import AppLayout from "./layouts/AppLayout.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import MyPageLayout from "./layouts/MyPageLayout.jsx";
@@ -29,50 +33,54 @@ function App() {
           )}
         />
 
-        <Route element={<AuthLayout />}>
-          <Route
-            path="login"
-            element={(
-              <RoutePlaceholder
-                eyebrow="AUTH"
-                title="로그인"
-                description="로그인 폼이 이 위치에 연결됩니다."
-              />
-            )}
-          />
-          <Route
-            path="signup"
-            element={(
-              <RoutePlaceholder
-                eyebrow="AUTH"
-                title="회원가입"
-                description="회원가입 폼이 이 위치에 연결됩니다."
-              />
-            )}
-          />
+        <Route element={<GuestOnlyRoute />}>
+          <Route element={<AuthLayout />}>
+            <Route
+              path="login"
+              element={(
+                <RoutePlaceholder
+                  eyebrow="AUTH"
+                  title="로그인"
+                  description="로그인 폼이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+            <Route
+              path="signup"
+              element={(
+                <RoutePlaceholder
+                  eyebrow="AUTH"
+                  title="회원가입"
+                  description="회원가입 폼이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+          </Route>
         </Route>
 
-        <Route path="mypage" element={<MyPageLayout />}>
-          <Route
-            index
-            element={(
-              <RoutePlaceholder
-                eyebrow="MY PAGE / 01"
-                title="회원정보 수정"
-                description="프로필과 회원정보 수정 화면이 이 위치에 연결됩니다."
-              />
-            )}
-          />
-          <Route
-            path="password"
-            element={(
-              <RoutePlaceholder
-                eyebrow="MY PAGE / 02"
-                title="비밀번호 수정"
-                description="비밀번호 수정 화면이 이 위치에 연결됩니다."
-              />
-            )}
-          />
+        <Route element={<RequireAuth />}>
+          <Route path="mypage" element={<MyPageLayout />}>
+            <Route
+              index
+              element={(
+                <RoutePlaceholder
+                  eyebrow="MY PAGE / 01"
+                  title="회원정보 수정"
+                  description="프로필과 회원정보 수정 화면이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+            <Route
+              path="password"
+              element={(
+                <RoutePlaceholder
+                  eyebrow="MY PAGE / 02"
+                  title="비밀번호 수정"
+                  description="비밀번호 수정 화면이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+          </Route>
         </Route>
 
         <Route path="posts">
@@ -86,16 +94,28 @@ function App() {
               />
             )}
           />
-          <Route
-            path="new"
-            element={(
-              <RoutePlaceholder
-                eyebrow="COMMUNITY"
-                title="게시글 작성"
-                description="게시글 작성 폼이 이 위치에 연결됩니다."
-              />
-            )}
-          />
+          <Route element={<RequireAuth />}>
+            <Route
+              path="new"
+              element={(
+                <RoutePlaceholder
+                  eyebrow="COMMUNITY"
+                  title="게시글 작성"
+                  description="게시글 작성 폼이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+            <Route
+              path=":postId/edit"
+              element={(
+                <RoutePlaceholder
+                  eyebrow="COMMUNITY"
+                  title="게시글 수정"
+                  description="선택한 게시글의 수정 폼이 이 위치에 연결됩니다."
+                />
+              )}
+            />
+          </Route>
           <Route
             path=":postId"
             element={(
@@ -103,16 +123,6 @@ function App() {
                 eyebrow="COMMUNITY"
                 title="게시글 상세"
                 description="선택한 게시글의 상세 화면이 이 위치에 연결됩니다."
-              />
-            )}
-          />
-          <Route
-            path=":postId/edit"
-            element={(
-              <RoutePlaceholder
-                eyebrow="COMMUNITY"
-                title="게시글 수정"
-                description="선택한 게시글의 수정 폼이 이 위치에 연결됩니다."
               />
             )}
           />
