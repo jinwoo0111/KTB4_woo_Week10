@@ -18,9 +18,10 @@ export async function getPosts({ cursor, size, signal } = {}) {
   return mapPostListResponse(data)
 }
 
-export async function getPost(postId) {
+export async function getPost(postId, { signal } = {}) {
   const { data } = await request(`/posts/${postId}`, {
     auth: 'optional',
+    signal,
   })
 
   return mapPostDetailResponse(data)

@@ -12,6 +12,7 @@ import LoadingState from "../components/common/LoadingState.jsx";
 import ProfileImage from "../components/common/ProfileImage.jsx";
 import { AUTH_STATUS } from "../contexts/AuthContext.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { formatRelativeDate } from "../utils/dateTime.js";
 import { resolveImageUrl } from "../utils/imageUrl.js";
 import "./post-list-page.css";
 
@@ -35,45 +36,6 @@ function saveViewMode(viewMode) {
   } catch {
     // 보기 방식 저장 실패가 게시글 조회와 화면 전환을 막지 않게 한다.
   }
-}
-
-function formatPostDate(createdAt) {
-  if (!createdAt) {
-    return "";
-  }
-
-  const originalDate = String(createdAt);
-  const createdDate = new Date(originalDate.replace(" ", "T"));
-
-  if (Number.isNaN(createdDate.getTime())) {
-    return originalDate;
-  }
-
-  const differenceMinutes = Math.floor(
-    (Date.now() - createdDate.getTime()) / 60000,
-  );
-
-  if (differenceMinutes < 1) {
-    return "방금 전";
-  }
-
-  if (differenceMinutes < 60) {
-    return `${differenceMinutes}분 전`;
-  }
-
-  const differenceHours = Math.floor(differenceMinutes / 60);
-
-  if (differenceHours < 24) {
-    return `${differenceHours}시간 전`;
-  }
-
-  const differenceDays = Math.floor(differenceHours / 24);
-
-  if (differenceDays < 7) {
-    return `${differenceDays}일 전`;
-  }
-
-  return originalDate.slice(0, 10);
 }
 
 function hasImage(imagePath) {
@@ -119,7 +81,7 @@ function PostListItem({ post }) {
           <div className="post-list-row__meta">
             <span>{post.author || "익명"}</span>
             <span aria-hidden="true">·</span>
-            <time dateTime={post.createdAt}>{formatPostDate(post.createdAt)}</time>
+            <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
             <span aria-hidden="true">·</span>
             <span>조회수 {post.viewCount ?? 0}</span>
           </div>
@@ -161,7 +123,7 @@ function PostCardItem({ post }) {
         <h2 className="post-card__title">{post.title}</h2>
         <p className="post-card__body">{post.content || post.title}</p>
         <time className="post-card__date" dateTime={post.createdAt}>
-          {formatPostDate(post.createdAt)}
+          {formatRelativeDate(post.createdAt)}
         </time>
 
         <div className="post-card__stats">
