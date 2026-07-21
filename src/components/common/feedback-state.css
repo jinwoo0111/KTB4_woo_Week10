@@ -1,0 +1,58 @@
+.feedback-state {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.feedback-state__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-primary-soft);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-round);
+  animation: feedback-state-spin 0.8s linear infinite;
+}
+
+.feedback-state__error-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-round);
+  background-color: var(--color-primary-soft);
+  color: var(--color-danger);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.feedback-state__message {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.feedback-state__retry-button {
+  min-height: 40px;
+  margin-top: var(--space-1);
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-small);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.feedback-state__retry-button:hover {
+  background-color: var(--color-primary-soft);
+}
+
+@keyframes feedback-state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
