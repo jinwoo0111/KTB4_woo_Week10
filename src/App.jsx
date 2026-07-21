@@ -8,6 +8,7 @@ import AuthLayout from "./layouts/AuthLayout.jsx";
 import MyPageLayout from "./layouts/MyPageLayout.jsx";
 import ArtistPage from "./pages/ArtistPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
 import RoutePlaceholder from "./pages/RoutePlaceholder.jsx";
 
 function App() {
@@ -19,16 +20,7 @@ function App() {
 
         <Route element={<GuestOnlyRoute />}>
           <Route element={<AuthLayout />}>
-            <Route
-              path="login"
-              element={(
-                <RoutePlaceholder
-                  eyebrow="AUTH"
-                  title="로그인"
-                  description="로그인 폼이 이 위치에 연결됩니다."
-                />
-              )}
-            />
+            <Route path="login" element={<LoginPage />} />
             <Route
               path="signup"
               element={(
