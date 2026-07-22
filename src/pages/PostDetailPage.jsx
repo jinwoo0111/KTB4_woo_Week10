@@ -8,6 +8,7 @@ import {
 } from "../api/commentApi.js";
 import {
   createPostLike,
+  deletePost,
   deletePostLike,
   getPost,
   increasePostView,
@@ -95,6 +96,24 @@ function needsLikeStateRefresh(error) {
       error.message === "post_like_not_found"
     )
   );
+}
+
+function getPostDeleteErrorMessage(error) {
+  if (error instanceof ApiError) {
+    if (error.message === "network_error") {
+      return "서버와 연결할 수 없습니다.";
+    }
+
+    if (error.status === 403) {
+      return "게시글을 삭제할 권한이 없습니다.";
+    }
+
+    if (error.status === 409) {
+      return "게시글 삭제 요청이 충돌했습니다.";
+    }
+  }
+
+  return "게시글을 삭제하지 못했습니다. 다시 시도해주세요.";
 }
 
 function getCommentErrorMessage(error, action) {
@@ -186,6 +205,7 @@ function PostDetailPage() {
   const { authStatus, currentUser, logout } = useAuth();
   const postId = useMemo(() => parsePostId(postIdParam), [postIdParam]);
   const likeRequestRef = useRef(false);
+  const postDeleteRequestRef = useRef(false);
   const commentRequestRef = useRef(false);
   const commentDeleteRequestRef = useRef(false);
   const commentInputRef = useRef(null);
@@ -196,6 +216,9 @@ function PostDetailPage() {
   const [hasImageFailed, setHasImageFailed] = useState(false);
   const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const [likeError, setLikeError] = useState("");
+  const [isPostDeleteOpen, setIsPostDeleteOpen] = useState(false);
+  const [postDeleteError, setPostDeleteError] = useState("");
+  const [isPostDeleting, setIsPostDeleting] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentError, setCommentError] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -311,6 +334,59 @@ function PostDetailPage() {
     } finally {
       likeRequestRef.current = false;
       setIsLikeSubmitting(false);
+    }
+  };
+
+  const handleOpenPostDelete = () => {
+    setPostDeleteError("");
+    setIsPostDeleteOpen(true);
+  };
+
+  const handleClosePostDelete = () => {
+    if (isPostDeleting) {
+      return;
+    }
+
+    setIsPostDeleteOpen(false);
+    setPostDeleteError("");
+  };
+
+  const handleConfirmPostDelete = async () => {
+    if (
+      postDeleteRequestRef.current ||
+      !post ||
+      authStatus !== AUTH_STATUS.AUTHENTICATED ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    postDeleteRequestRef.current = true;
+    setIsPostDeleting(true);
+    setPostDeleteError("");
+
+    try {
+      await deletePost(postId);
+      navigate("/posts", { replace: true });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (
+        error instanceof ApiError &&
+        error.message === "post_not_found"
+      ) {
+        navigate("/posts", { replace: true });
+        return;
+      }
+
+      setPostDeleteError(getPostDeleteErrorMessage(error));
+    } finally {
+      postDeleteRequestRef.current = false;
+      setIsPostDeleting(false);
     }
   };
 
@@ -555,6 +631,13 @@ function PostDetailPage() {
           {isPostAuthor && (
             <div className="post-detail-article__actions">
               <Link to={`/posts/${post.postId}/edit`}>수정</Link>
+              <button
+                className="post-detail-article__delete"
+                type="button"
+                onClick={handleOpenPostDelete}
+              >
+                삭제
+              </button>
             </div>
           )}
         </header>
@@ -704,6 +787,17 @@ function PostDetailPage() {
           </div>
         )}
       </section>
+
+      <ConfirmModal
+        isOpen={isPostDeleteOpen}
+        title="게시글을 삭제하시겠습니까?"
+        description="게시글과 댓글이 모두 삭제되며 다시 복구할 수 없습니다."
+        confirmText="삭제"
+        errorMessage={postDeleteError}
+        isConfirming={isPostDeleting}
+        onConfirm={handleConfirmPostDelete}
+        onCancel={handleClosePostDelete}
+      />
 
       <ConfirmModal
         isOpen={deleteTargetComment !== null}

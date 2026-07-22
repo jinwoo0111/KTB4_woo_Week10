@@ -32,22 +32,36 @@
   gap: var(--space-2);
 }
 
-.post-detail-article__actions a {
+.post-detail-article__actions a,
+.post-detail-article__actions button {
   min-width: 62px;
   min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-small);
   background-color: var(--color-surface);
   color: var(--color-primary);
+  font: inherit;
   font-size: 13px;
   font-weight: 800;
 }
 
-.post-detail-article__actions a:hover {
+.post-detail-article__actions a:hover,
+.post-detail-article__actions button:hover {
   background-color: var(--color-primary-soft);
+}
+
+.post-detail-article__actions .post-detail-article__delete {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.post-detail-article__actions .post-detail-article__delete:hover {
+  background-color: var(--color-danger);
+  color: var(--color-surface);
 }
 
 .post-detail-article__meta {
