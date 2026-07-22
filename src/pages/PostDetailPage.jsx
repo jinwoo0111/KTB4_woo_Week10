@@ -2,12 +2,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ApiError } from "../api/ApiError.js";
 import {
+  createComment,
+  deleteComment,
+  updateComment,
+} from "../api/commentApi.js";
+import {
   createPostLike,
   deletePostLike,
   getPost,
   increasePostView,
 } from "../api/postApi.js";
 import ErrorState from "../components/common/ErrorState.jsx";
+import ConfirmModal from "../components/common/ConfirmModal.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import ProfileImage from "../components/common/ProfileImage.jsx";
 import { AUTH_STATUS } from "../contexts/AuthContext.js";
@@ -91,9 +97,52 @@ function needsLikeStateRefresh(error) {
   );
 }
 
-function PostComment({ comment, isCurrentUser }) {
+function getCommentErrorMessage(error, action) {
+  if (error instanceof ApiError) {
+    if (error.message === "network_error") {
+      return "서버와 연결할 수 없습니다.";
+    }
+
+    if (error.status === 403) {
+      return `댓글을 ${action}할 권한이 없습니다.`;
+    }
+
+    if (error.status === 404) {
+      return error.message === "comment_not_found"
+        ? "댓글을 찾을 수 없습니다."
+        : "게시글을 찾을 수 없습니다.";
+    }
+
+    if (error.status === 409) {
+      return `댓글 ${action} 요청이 충돌했습니다.`;
+    }
+  }
+
+  return `댓글을 ${action}하지 못했습니다. 다시 시도해주세요.`;
+}
+
+function isValidComment(comment) {
   return (
-    <article className="post-detail-comment">
+    comment !== null &&
+    comment !== undefined &&
+    comment.commentId !== null &&
+    comment.commentId !== undefined &&
+    typeof comment.content === "string"
+  );
+}
+
+function PostComment({
+  comment,
+  isCurrentUser,
+  isBusy,
+  isEditing,
+  onEdit,
+  onDelete,
+}) {
+  return (
+    <article
+      className={`post-detail-comment${isEditing ? " is-editing" : ""}`}
+    >
       <header className="post-detail-comment__header">
         <div className="post-detail-comment__author-info">
           <ProfileImage
@@ -113,7 +162,15 @@ function PostComment({ comment, isCurrentUser }) {
         </div>
 
         {isCurrentUser && (
-          <span className="post-detail-comment__mine">내 댓글</span>
+          <div className="post-detail-comment__actions">
+            <span className="post-detail-comment__mine">내 댓글</span>
+            <button type="button" disabled={isBusy} onClick={onEdit}>
+              수정
+            </button>
+            <button type="button" disabled={isBusy} onClick={onDelete}>
+              삭제
+            </button>
+          </div>
         )}
       </header>
 
@@ -129,6 +186,9 @@ function PostDetailPage() {
   const { authStatus, currentUser, logout } = useAuth();
   const postId = useMemo(() => parsePostId(postIdParam), [postIdParam]);
   const likeRequestRef = useRef(false);
+  const commentRequestRef = useRef(false);
+  const commentDeleteRequestRef = useRef(false);
+  const commentInputRef = useRef(null);
   const [post, setPost] = useState(null);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState("");
@@ -136,6 +196,13 @@ function PostDetailPage() {
   const [hasImageFailed, setHasImageFailed] = useState(false);
   const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const [likeError, setLikeError] = useState("");
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentError, setCommentError] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [deleteTargetComment, setDeleteTargetComment] = useState(null);
+  const [commentDeleteError, setCommentDeleteError] = useState("");
+  const [isCommentDeleting, setIsCommentDeleting] = useState(false);
 
   useEffect(() => {
     if (postId === null) {
@@ -244,6 +311,195 @@ function PostDetailPage() {
     } finally {
       likeRequestRef.current = false;
       setIsLikeSubmitting(false);
+    }
+  };
+
+  const resetCommentForm = () => {
+    setCommentDraft("");
+    setCommentError("");
+    setEditingCommentId(null);
+  };
+
+  const removeCommentFromPost = (commentId) => {
+    setPost((currentPost) => {
+      if (currentPost?.postId !== postId) {
+        return currentPost;
+      }
+
+      const comments = currentPost.comments.filter(
+        (comment) => String(comment.commentId) !== String(commentId),
+      );
+
+      if (comments.length === currentPost.comments.length) {
+        return currentPost;
+      }
+
+      return {
+        ...currentPost,
+        comments,
+        commentCount: Math.max(0, (Number(currentPost.commentCount) || 0) - 1),
+      };
+    });
+
+    if (String(editingCommentId) === String(commentId)) {
+      resetCommentForm();
+    }
+  };
+
+  const handleCommentSubmit = async (event) => {
+    event.preventDefault();
+
+    if (authStatus !== AUTH_STATUS.AUTHENTICATED || !currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    const content = commentDraft.trim();
+
+    if (!content) {
+      setCommentError("댓글을 입력해주세요.");
+      commentInputRef.current?.focus();
+      return;
+    }
+
+    if (commentRequestRef.current || !post) {
+      return;
+    }
+
+    const submittedCommentId = editingCommentId;
+    commentRequestRef.current = true;
+    setIsCommentSubmitting(true);
+    setCommentError("");
+
+    try {
+      const savedComment = submittedCommentId === null
+        ? await createComment(postId, { content })
+        : await updateComment(postId, submittedCommentId, { content });
+
+      if (!isValidComment(savedComment)) {
+        throw new ApiError({ message: "invalid_comment_response" });
+      }
+
+      setPost((currentPost) => {
+        if (currentPost?.postId !== postId) {
+          return currentPost;
+        }
+
+        if (submittedCommentId === null) {
+          return {
+            ...currentPost,
+            comments: [...currentPost.comments, savedComment],
+            commentCount: (Number(currentPost.commentCount) || 0) + 1,
+          };
+        }
+
+        return {
+          ...currentPost,
+          comments: currentPost.comments.map((comment) => (
+            String(comment.commentId) === String(submittedCommentId)
+              ? savedComment
+              : comment
+          )),
+        };
+      });
+
+      resetCommentForm();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (
+        submittedCommentId !== null &&
+        error instanceof ApiError &&
+        error.message === "comment_not_found"
+      ) {
+        removeCommentFromPost(submittedCommentId);
+        setCommentError("이미 삭제된 댓글이라 목록에서 제거했습니다.");
+      } else if (
+        error instanceof ApiError &&
+        error.message === "post_not_found"
+      ) {
+        setRetryCount((currentCount) => currentCount + 1);
+      } else {
+        setCommentError(
+          getCommentErrorMessage(error, submittedCommentId === null ? "등록" : "수정"),
+        );
+      }
+    } finally {
+      commentRequestRef.current = false;
+      setIsCommentSubmitting(false);
+    }
+  };
+
+  const handleStartCommentEdit = (comment) => {
+    setEditingCommentId(comment.commentId);
+    setCommentDraft(comment.content);
+    setCommentError("");
+    commentInputRef.current?.focus();
+  };
+
+  const handleOpenCommentDelete = (comment) => {
+    setDeleteTargetComment(comment);
+    setCommentDeleteError("");
+  };
+
+  const handleCloseCommentDelete = () => {
+    if (isCommentDeleting) {
+      return;
+    }
+
+    setDeleteTargetComment(null);
+    setCommentDeleteError("");
+  };
+
+  const handleConfirmCommentDelete = async () => {
+    if (
+      !deleteTargetComment ||
+      commentDeleteRequestRef.current ||
+      authStatus !== AUTH_STATUS.AUTHENTICATED ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    const deletedCommentId = deleteTargetComment.commentId;
+    commentDeleteRequestRef.current = true;
+    setIsCommentDeleting(true);
+    setCommentDeleteError("");
+
+    try {
+      await deleteComment(postId, deletedCommentId);
+      removeCommentFromPost(deletedCommentId);
+      setDeleteTargetComment(null);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (
+        error instanceof ApiError &&
+        error.message === "comment_not_found"
+      ) {
+        removeCommentFromPost(deletedCommentId);
+        setDeleteTargetComment(null);
+        setCommentError("이미 삭제된 댓글이라 목록에서 제거했습니다.");
+      } else if (
+        error instanceof ApiError &&
+        error.message === "post_not_found"
+      ) {
+        setDeleteTargetComment(null);
+        setRetryCount((currentCount) => currentCount + 1);
+      } else {
+        setCommentDeleteError(getCommentErrorMessage(error, "삭제"));
+      }
+    } finally {
+      commentDeleteRequestRef.current = false;
+      setIsCommentDeleting(false);
     }
   };
 
@@ -374,6 +630,62 @@ function PostDetailPage() {
           <span>{post.comments.length}</span>
         </div>
 
+        <form className="post-detail-comment-form" onSubmit={handleCommentSubmit}>
+          <label htmlFor="post-detail-comment-input">
+            {editingCommentId === null ? "댓글 작성" : "댓글 수정"}
+          </label>
+          <textarea
+            ref={commentInputRef}
+            id="post-detail-comment-input"
+            value={commentDraft}
+            placeholder={
+              authStatus === AUTH_STATUS.GUEST
+                ? "로그인 후 댓글을 작성할 수 있습니다."
+                : "댓글을 입력해주세요."
+            }
+            aria-invalid={Boolean(commentError)}
+            aria-describedby="post-detail-comment-error"
+            disabled={isCommentSubmitting}
+            onChange={(event) => {
+              setCommentDraft(event.target.value);
+              if (event.target.value.trim()) {
+                setCommentError("");
+              }
+            }}
+          />
+          <div className="post-detail-comment-form__footer">
+            <p id="post-detail-comment-error" role="alert">
+              {commentError}
+            </p>
+            <div className="post-detail-comment-form__actions">
+              {editingCommentId !== null && (
+                <button
+                  className="post-detail-comment-form__cancel"
+                  type="button"
+                  disabled={isCommentSubmitting}
+                  onClick={resetCommentForm}
+                >
+                  취소
+                </button>
+              )}
+              <button
+                className="post-detail-comment-form__submit"
+                type="submit"
+                disabled={
+                  authStatus === AUTH_STATUS.CHECKING ||
+                  isCommentSubmitting
+                }
+              >
+                {isCommentSubmitting
+                  ? "처리 중..."
+                  : editingCommentId === null
+                    ? "댓글 등록"
+                    : "댓글 수정"}
+              </button>
+            </div>
+          </div>
+        </form>
+
         {post.comments.length === 0 ? (
           <p className="post-detail-comments__empty">아직 댓글이 없습니다.</p>
         ) : (
@@ -383,11 +695,26 @@ function PostDetailPage() {
                 key={comment.commentId}
                 comment={comment}
                 isCurrentUser={isSameUser(currentUser?.userId, comment.authorId)}
+                isBusy={isCommentSubmitting || isCommentDeleting}
+                isEditing={String(editingCommentId) === String(comment.commentId)}
+                onEdit={() => handleStartCommentEdit(comment)}
+                onDelete={() => handleOpenCommentDelete(comment)}
               />
             ))}
           </div>
         )}
       </section>
+
+      <ConfirmModal
+        isOpen={deleteTargetComment !== null}
+        title="댓글을 삭제하시겠습니까?"
+        description="삭제한 댓글은 다시 복구할 수 없습니다."
+        confirmText="삭제"
+        errorMessage={commentDeleteError}
+        isConfirming={isCommentDeleting}
+        onConfirm={handleConfirmCommentDelete}
+        onCancel={handleCloseCommentDelete}
+      />
     </div>
   );
 }
