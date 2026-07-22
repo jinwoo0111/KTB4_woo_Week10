@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ApiError } from "../api/ApiError.js";
-import { getPost, increasePostView } from "../api/postApi.js";
+import {
+  createPostLike,
+  deletePostLike,
+  getPost,
+  increasePostView,
+} from "../api/postApi.js";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import ProfileImage from "../components/common/ProfileImage.jsx";
+import { AUTH_STATUS } from "../contexts/AuthContext.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { formatRelativeDate } from "../utils/dateTime.js";
 import { resolveImageUrl } from "../utils/imageUrl.js";
@@ -57,6 +63,34 @@ function isSameUser(currentUserId, authorId) {
   );
 }
 
+function getLikeErrorMessage(error) {
+  if (error instanceof ApiError) {
+    if (error.message === "network_error") {
+      return "서버와 연결할 수 없습니다.";
+    }
+
+    if (error.status === 403) {
+      return "좋아요를 처리할 권한이 없습니다.";
+    }
+
+    if (error.status === 404) {
+      return "게시글을 찾을 수 없습니다.";
+    }
+  }
+
+  return "좋아요를 처리하지 못했습니다. 다시 시도해주세요.";
+}
+
+function needsLikeStateRefresh(error) {
+  return (
+    error instanceof ApiError &&
+    (
+      error.message === "post_like_already_exists" ||
+      error.message === "post_like_not_found"
+    )
+  );
+}
+
 function PostComment({ comment, isCurrentUser }) {
   return (
     <article className="post-detail-comment">
@@ -92,13 +126,16 @@ function PostDetailPage() {
   const { postId: postIdParam } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { authStatus, currentUser, logout } = useAuth();
   const postId = useMemo(() => parsePostId(postIdParam), [postIdParam]);
+  const likeRequestRef = useRef(false);
   const [post, setPost] = useState(null);
   const [loadState, setLoadState] = useState("loading");
   const [loadError, setLoadError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
   const [hasImageFailed, setHasImageFailed] = useState(false);
+  const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
+  const [likeError, setLikeError] = useState("");
 
   useEffect(() => {
     if (postId === null) {
@@ -156,6 +193,60 @@ function PostDetailPage() {
     };
   }, [location.key, postId, retryCount]);
 
+  const handleLikeToggle = async () => {
+    if (authStatus !== AUTH_STATUS.AUTHENTICATED || !currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    if (likeRequestRef.current || !post) {
+      return;
+    }
+
+    const wasLiked = post.likedByMe === true;
+    likeRequestRef.current = true;
+    setIsLikeSubmitting(true);
+    setLikeError("");
+
+    try {
+      if (wasLiked) {
+        await deletePostLike(postId);
+      } else {
+        await createPostLike(postId);
+      }
+
+      setPost((currentPost) => {
+        if (currentPost?.postId !== postId) {
+          return currentPost;
+        }
+
+        const currentLikeCount = Number(currentPost.likeCount) || 0;
+
+        return {
+          ...currentPost,
+          likedByMe: !wasLiked,
+          likeCount: Math.max(0, currentLikeCount + (wasLiked ? -1 : 1)),
+        };
+      });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (needsLikeStateRefresh(error)) {
+        setLikeError("좋아요 상태가 달라 최신 정보로 다시 불러왔습니다.");
+        setRetryCount((currentCount) => currentCount + 1);
+      } else {
+        setLikeError(getLikeErrorMessage(error));
+      }
+    } finally {
+      likeRequestRef.current = false;
+      setIsLikeSubmitting(false);
+    }
+  };
+
   if (postId === null) {
     return (
       <div className="post-detail-page post-detail-page--feedback">
@@ -164,14 +255,6 @@ function PostDetailPage() {
           retryText="목록으로 이동"
           onRetry={() => navigate("/posts", { replace: true })}
         />
-      </div>
-    );
-  }
-
-  if (loadState === "loading" || post?.postId !== postId) {
-    return (
-      <div className="post-detail-page post-detail-page--feedback">
-        <LoadingState message="게시글을 불러오는 중입니다." />
       </div>
     );
   }
@@ -192,6 +275,14 @@ function PostDetailPage() {
             }
           }}
         />
+      </div>
+    );
+  }
+
+  if (loadState === "loading" || post?.postId !== postId) {
+    return (
+      <div className="post-detail-page post-detail-page--feedback">
+        <LoadingState message="게시글을 불러오는 중입니다." />
       </div>
     );
   }
@@ -242,12 +333,26 @@ function PostDetailPage() {
         <p className="post-detail-article__content">{post.content}</p>
 
         <div className="post-detail-counts" aria-label="게시글 통계">
-          <div
-            className={`post-detail-counts__item${post.likedByMe ? " is-liked" : ""}`}
+          <button
+            className={`post-detail-counts__item post-detail-counts__like${post.likedByMe ? " is-liked" : ""}`}
+            type="button"
+            aria-label={post.likedByMe ? "좋아요 취소" : "좋아요 추가"}
+            aria-pressed={post.likedByMe === true}
+            disabled={
+              authStatus === AUTH_STATUS.CHECKING ||
+              isLikeSubmitting
+            }
+            onClick={handleLikeToggle}
           >
             <strong>{post.likeCount ?? 0}</strong>
-            <span>{post.likedByMe ? "좋아요함" : "좋아요수"}</span>
-          </div>
+            <span>
+              {isLikeSubmitting
+                ? "처리 중"
+                : post.likedByMe
+                  ? "좋아요 취소"
+                  : "좋아요"}
+            </span>
+          </button>
           <div className="post-detail-counts__item">
             <strong>{post.viewCount ?? 0}</strong>
             <span>조회수</span>
@@ -257,6 +362,10 @@ function PostDetailPage() {
             <span>댓글</span>
           </div>
         </div>
+
+        <p className="post-detail-like-error" role="alert">
+          {likeError}
+        </p>
       </article>
 
       <section className="post-detail-comments" aria-labelledby="comment-list-title">

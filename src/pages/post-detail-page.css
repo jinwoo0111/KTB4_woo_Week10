@@ -131,6 +131,29 @@
   font-size: 14px;
 }
 
+.post-detail-counts__like {
+  border: 0;
+  font: inherit;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.post-detail-counts__like:hover:not(:disabled) {
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.post-detail-counts__like.is-liked:hover:not(:disabled) {
+  color: var(--color-surface);
+}
+
+.post-detail-counts__like:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .post-detail-counts__item.is-liked {
   background-color: var(--color-primary);
   color: var(--color-surface);
@@ -139,6 +162,14 @@
 .post-detail-counts__item strong {
   margin-bottom: var(--space-1);
   font-size: 18px;
+}
+
+.post-detail-like-error {
+  min-height: 21px;
+  margin-top: calc(var(--space-3) * -1);
+  color: var(--color-danger);
+  font-size: 13px;
+  text-align: center;
 }
 
 .post-detail-comments {
