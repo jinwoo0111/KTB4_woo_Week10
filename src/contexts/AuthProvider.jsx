@@ -54,7 +54,10 @@ function AuthProvider({ children }) {
   const authCheckRef = useRef(null);
 
   const handleAuthCheckError = useCallback((error, tokenBeingChecked) => {
-    if (error instanceof ApiError && error.status === 401) {
+    if (
+      error instanceof ApiError &&
+      (error.status === 401 || error.status === 404)
+    ) {
       removeAccessToken();
 
       setAuthState((currentState) => {
