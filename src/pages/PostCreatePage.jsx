@@ -211,7 +211,7 @@ function PostCreatePage() {
       <header className="post-form-page__header">
         <p className="post-form-page__eyebrow">COMMUNITY / WRITE</p>
         <h1 id="post-create-title">게시글 작성</h1>
-        <p>RESCENE 팬들과 나누고 싶은 이야기를 작성해주세요.</p>
+        <p>Remine과 나누고 싶은 이야기를 작성해주세요.</p>
       </header>
 
       <form
