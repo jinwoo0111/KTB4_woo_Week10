@@ -14,7 +14,10 @@ function buildUrl(path, query) {
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  const url = new URL(`${API_BASE_URL}${normalizedPath}`)
+  const url = new URL(
+    `${API_BASE_URL}${normalizedPath}`,
+    window.location.origin,
+  )
 
   if (!query) {
     return url
