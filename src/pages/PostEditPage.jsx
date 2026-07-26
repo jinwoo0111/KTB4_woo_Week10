@@ -135,7 +135,9 @@ function PostEditPage() {
     }
 
     const controller = new AbortController();
-    const loadTimer = window.setTimeout(async () => {
+    let ignore = false;
+
+    async function loadPostDetail() {
       setLoadState("loading");
       setLoadError("");
       setPost(null);
@@ -143,7 +145,7 @@ function PostEditPage() {
       try {
         const postDetail = await getPost(postId, { signal: controller.signal });
 
-        if (controller.signal.aborted) {
+        if (ignore || controller.signal.aborted) {
           return;
         }
 
@@ -169,17 +171,19 @@ function PostEditPage() {
           imageInputRef.current.value = "";
         }
       } catch (error) {
-        if (controller.signal.aborted) {
+        if (ignore || controller.signal.aborted) {
           return;
         }
 
         setLoadError(getLoadErrorMessage(error));
         setLoadState("error");
       }
-    }, 0);
+    }
+
+    void loadPostDetail();
 
     return () => {
-      window.clearTimeout(loadTimer);
+      ignore = true;
       controller.abort();
     };
   }, [postId, retryCount]);

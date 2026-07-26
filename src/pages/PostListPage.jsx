@@ -233,12 +233,11 @@ function PostListPage() {
   }, []);
 
   useEffect(() => {
-    const initialLoadTimer = window.setTimeout(() => {
-      loadPosts({ reset: true });
-    }, 0);
+    // 초기 목록 조회와 로딩 상태를 함께 시작하는 의도적인 Effect 동기화다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPosts({ reset: true });
 
     return () => {
-      window.clearTimeout(initialLoadTimer);
       requestSequenceRef.current += 1;
       loadingRef.current = false;
       requestAbortRef.current?.abort();

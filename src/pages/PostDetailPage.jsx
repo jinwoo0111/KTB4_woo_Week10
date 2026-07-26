@@ -234,7 +234,9 @@ function PostDetailPage() {
 
     const controller = new AbortController();
     const viewEntryKey = `${location.key}:${postId}`;
-    const loadTimer = window.setTimeout(async () => {
+    let ignore = false;
+
+    async function loadPostDetail() {
       setLoadState("loading");
       setLoadError("");
       setPost(null);
@@ -245,7 +247,7 @@ function PostDetailPage() {
           signal: controller.signal,
         });
 
-        if (controller.signal.aborted) {
+        if (ignore || controller.signal.aborted) {
           return;
         }
 
@@ -258,7 +260,7 @@ function PostDetailPage() {
 
         const viewResult = await increaseViewOnce(viewEntryKey, postId);
 
-        if (controller.signal.aborted || !viewResult) {
+        if (ignore || controller.signal.aborted || !viewResult) {
           return;
         }
 
@@ -268,17 +270,19 @@ function PostDetailPage() {
             : currentPost
         ));
       } catch (error) {
-        if (controller.signal.aborted) {
+        if (ignore || controller.signal.aborted) {
           return;
         }
 
         setLoadError(getDetailErrorMessage(error));
         setLoadState("error");
       }
-    }, 0);
+    }
+
+    void loadPostDetail();
 
     return () => {
-      window.clearTimeout(loadTimer);
+      ignore = true;
       controller.abort();
     };
   }, [location.key, postId, retryCount]);
