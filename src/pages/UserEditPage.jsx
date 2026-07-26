@@ -9,6 +9,10 @@ import ConfirmModal from "../components/common/ConfirmModal.jsx";
 import ProfileImage from "../components/common/ProfileImage.jsx";
 import MyPageSidebar from "../components/mypage/MyPageSidebar.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import {
+  IMAGE_ACCEPT,
+  validateProfileImage,
+} from "../utils/imageValidation.js";
 import { validateNickname } from "../utils/validation.js";
 import "./user-edit-page.css";
 
@@ -133,21 +137,28 @@ function UserEditPage() {
 
   const handleProfileImageChange = (event) => {
     const file = event.target.files?.[0] ?? null;
+    const nextProfileError = validateProfileImage(file);
 
     clearPreviewUrl();
-    setProfileImageFile(file);
+    setProfileImageFile(null);
+    setProfilePreviewUrl(null);
     setRemoveProfileImage(false);
-    setProfileError("");
+    setProfileError(nextProfileError);
     setSubmitError("");
 
-    if (!file) {
-      setProfilePreviewUrl(null);
+    if (!file || nextProfileError) {
+      if (nextProfileError) {
+        event.target.value = "";
+      }
+
       return;
     }
 
     const previewUrl = URL.createObjectURL(file);
     previewUrlRef.current = previewUrl;
+    setProfileImageFile(file);
     setProfilePreviewUrl(previewUrl);
+    setProfileError("");
   };
 
   const handleProfileImageRemove = () => {
@@ -292,8 +303,9 @@ function UserEditPage() {
                 id="user-profile-image"
                 name="profileImage"
                 type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
+                accept={IMAGE_ACCEPT}
                 aria-describedby="user-profile-error"
+                aria-invalid={Boolean(profileError)}
                 disabled={isSubmitting}
                 onChange={handleProfileImageChange}
               />

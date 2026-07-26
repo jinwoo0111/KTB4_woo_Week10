@@ -5,6 +5,7 @@ import { createPost as requestCreatePost } from "../api/postApi.js";
 import { uploadPostImage } from "../api/uploadApi.js";
 import { useAuth } from "../hooks/useAuth.js";
 import {
+  IMAGE_ACCEPT,
   POST_TITLE_MAX_LENGTH,
   validatePostContent,
   validatePostImage,
@@ -275,7 +276,7 @@ function PostCreatePage() {
               id="post-image"
               name="image"
               type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
+              accept={IMAGE_ACCEPT}
               aria-describedby="post-image-message"
               aria-invalid={Boolean(imageError)}
               disabled={isSubmitting}

@@ -1,12 +1,10 @@
 export const POST_TITLE_MAX_LENGTH = 26;
-export const POST_IMAGE_MAX_SIZE = 10 * 1024 * 1024;
 
-const ALLOWED_POST_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-]);
+export {
+  IMAGE_ACCEPT,
+  IMAGE_MAX_SIZE as POST_IMAGE_MAX_SIZE,
+  validatePostImage,
+} from "./imageValidation.js";
 
 export function validatePostTitle(value) {
   const title = value.trim();
@@ -24,20 +22,4 @@ export function validatePostTitle(value) {
 
 export function validatePostContent(value) {
   return value.trim() ? "" : "내용을 입력해주세요.";
-}
-
-export function validatePostImage(file) {
-  if (!file) {
-    return "";
-  }
-
-  if (!ALLOWED_POST_IMAGE_TYPES.has(file.type)) {
-    return "JPG, PNG, GIF, WEBP 이미지만 등록할 수 있습니다.";
-  }
-
-  if (file.size > POST_IMAGE_MAX_SIZE) {
-    return "게시글 이미지는 10MB 이하만 등록할 수 있습니다.";
-  }
-
-  return "";
 }

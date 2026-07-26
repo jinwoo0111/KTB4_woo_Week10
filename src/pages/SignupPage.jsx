@@ -4,6 +4,10 @@ import { ApiError } from "../api/ApiError.js";
 import { signup as requestSignup } from "../api/authApi.js";
 import defaultProfileImage from "../assets/rescene-default-profile.jpg";
 import {
+  IMAGE_ACCEPT,
+  validateProfileImage,
+} from "../utils/imageValidation.js";
+import {
   validateEmail,
   validateNickname,
   validatePassword,
@@ -16,7 +20,6 @@ const INVALID_TOAST_DURATION = 1600;
 const EMPTY_SERVER_ERRORS = {
   email: "",
   nickname: "",
-  profileImage: "",
 };
 
 function getSignupErrorFeedback(error) {
@@ -63,6 +66,7 @@ function SignupPage() {
   const [nickname, setNickname] = useState("");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profilePreviewUrl, setProfilePreviewUrl] = useState(defaultProfileImage);
+  const [profileImageError, setProfileImageError] = useState("");
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -121,24 +125,31 @@ function SignupPage() {
 
   const handleProfileImageChange = (event) => {
     const file = event.target.files?.[0] ?? null;
+    const nextProfileImageError = validateProfileImage(file);
 
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
     }
 
-    setProfileImageFile(file);
-    clearServerError("profileImage");
+    setProfileImageFile(null);
+    setProfilePreviewUrl(defaultProfileImage);
+    setProfileImageError(nextProfileImageError);
     clearRequestFeedback();
 
-    if (!file) {
-      setProfilePreviewUrl(defaultProfileImage);
+    if (!file || nextProfileImageError) {
+      if (nextProfileImageError) {
+        event.target.value = "";
+      }
+
       return;
     }
 
     const previewUrl = URL.createObjectURL(file);
     previewUrlRef.current = previewUrl;
+    setProfileImageFile(file);
     setProfilePreviewUrl(previewUrl);
+    setProfileImageError("");
   };
 
   const handleFieldChange = (field, value) => {
@@ -177,6 +188,7 @@ function SignupPage() {
       nickname: true,
     });
     setServerErrors(EMPTY_SERVER_ERRORS);
+    setProfileImageError("");
     setSubmitError("");
 
     if (!isFormValid || isSubmitting) {
@@ -212,7 +224,9 @@ function SignupPage() {
     } catch (error) {
       const feedback = getSignupErrorFeedback(error);
 
-      if (feedback.field) {
+      if (feedback.field === "profileImage") {
+        setProfileImageError(feedback.message);
+      } else if (feedback.field) {
         setServerErrors((current) => ({
           ...current,
           [feedback.field]: feedback.message,
@@ -252,17 +266,18 @@ function SignupPage() {
             id="signup-profile-image"
             name="profileImage"
             type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp"
+            accept={IMAGE_ACCEPT}
             aria-describedby="signup-profile-message"
+            aria-invalid={Boolean(profileImageError)}
             disabled={isSubmitting}
             onChange={handleProfileImageChange}
           />
           <p
-            className={`signup-form__profile-message${serverErrors.profileImage ? " is-error" : ""}`}
+            className={`signup-form__profile-message${profileImageError ? " is-error" : ""}`}
             id="signup-profile-message"
             aria-live="polite"
           >
-            {serverErrors.profileImage || "프로필 사진은 선택사항입니다."}
+            {profileImageError || "프로필 사진은 선택사항입니다."}
           </p>
         </div>
 
