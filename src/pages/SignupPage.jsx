@@ -372,7 +372,7 @@ function SignupPage() {
         <button
           className={`signup-form__submit${isFormValid ? " is-ready" : ""}`}
           type="submit"
-          disabled={isSubmitting}
+          disabled={!isFormValid || isSubmitting}
         >
           {isSubmitting ? "회원가입 중..." : "회원가입"}
         </button>

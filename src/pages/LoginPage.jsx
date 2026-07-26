@@ -152,7 +152,7 @@ function LoginPage() {
         <button
           className={`login-form__submit${isFormValid ? " is-ready" : ""}`}
           type="submit"
-          disabled={isSubmitting}
+          disabled={!isFormValid || isSubmitting}
         >
           {isSubmitting ? "로그인 중..." : "로그인"}
         </button>
