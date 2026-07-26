@@ -272,34 +272,6 @@
   text-underline-offset: 3px;
 }
 
-.user-edit-toast {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 160px;
-  min-height: 48px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-round);
-  background-color: var(--color-text);
-  box-shadow: var(--shadow-medium);
-  color: var(--color-surface);
-  font-size: 14px;
-  font-weight: 800;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px);
-  transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.user-edit-toast.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 @media (max-width: 760px) {
   .user-edit-page__intro {
     margin-bottom: var(--space-6);
@@ -332,11 +304,6 @@
     font-size: 11px;
   }
 
-  .user-edit-toast {
-    right: var(--space-4);
-    bottom: var(--space-4);
-    left: var(--space-4);
-  }
 }
 
 @media (max-width: 480px) {

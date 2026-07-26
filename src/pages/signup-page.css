@@ -202,34 +202,6 @@
   opacity: 0.6;
 }
 
-.signup-toast {
-  position: fixed;
-  left: 50%;
-  bottom: 36px;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 150px;
-  min-height: 46px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-round);
-  background-color: var(--color-primary);
-  box-shadow: var(--shadow-medium);
-  color: var(--color-surface);
-  font-size: 14px;
-  font-weight: 800;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 12px);
-  transition: opacity 200ms ease, transform 200ms ease;
-}
-
-.signup-toast.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
 @media (max-width: 520px) {
   .signup-card {
     padding: 24px 20px 22px;

@@ -6,9 +6,12 @@ import {
   updateUser as requestUpdateUser,
 } from "../api/userApi.js";
 import ConfirmModal from "../components/common/ConfirmModal.jsx";
+import FormField from "../components/common/FormField.jsx";
 import ProfileImage from "../components/common/ProfileImage.jsx";
+import Toast from "../components/common/Toast.jsx";
 import MyPageSidebar from "../components/mypage/MyPageSidebar.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { useToast } from "../hooks/useToast.js";
 import {
   IMAGE_ACCEPT,
   validateProfileImage,
@@ -75,7 +78,6 @@ function UserEditPage() {
   } = useAuth();
   const profileInputRef = useRef(null);
   const previewUrlRef = useRef(null);
-  const toastTimerRef = useRef(null);
   const [nickname, setNickname] = useState(currentUser.nickname ?? "");
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profilePreviewUrl, setProfilePreviewUrl] = useState(null);
@@ -84,18 +86,17 @@ function UserEditPage() {
   const [nicknameServerError, setNicknameServerError] = useState("");
   const [profileError, setProfileError] = useState("");
   const [submitError, setSubmitError] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const { showToast, toastMessage } = useToast(TOAST_DURATION);
 
   useEffect(() => () => {
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
-    window.clearTimeout(toastTimerRef.current);
   }, []);
 
   const nicknameValidationError = useMemo(
@@ -112,15 +113,6 @@ function UserEditPage() {
   const displayedProfileSource = removeProfileImage
     ? null
     : profilePreviewUrl || currentUser.profileImage;
-
-  const showToast = (message) => {
-    window.clearTimeout(toastTimerRef.current);
-    setToastMessage(message);
-
-    toastTimerRef.current = window.setTimeout(() => {
-      setToastMessage("");
-    }, TOAST_DURATION);
-  };
 
   const clearPreviewUrl = () => {
     if (previewUrlRef.current) {
@@ -350,31 +342,18 @@ function UserEditPage() {
               <p className="user-edit-form__readonly">{currentUser.email}</p>
             </div>
 
-            <div className="user-edit-form__field">
-              <label className="user-edit-form__label" htmlFor="user-nickname">
-                닉네임
-              </label>
-              <input
-                className="user-edit-form__input"
-                id="user-nickname"
-                name="nickname"
-                type="text"
-                autoComplete="nickname"
-                value={nickname}
-                aria-describedby="user-nickname-error"
-                aria-invalid={Boolean(displayedNicknameError)}
-                disabled={isSubmitting}
-                onBlur={() => setIsNicknameTouched(true)}
-                onChange={handleNicknameChange}
-              />
-              <p
-                className="user-edit-form__helper"
-                id="user-nickname-error"
-                aria-live="polite"
-              >
-                {displayedNicknameError}
-              </p>
-            </div>
+            <FormField
+              id="user-nickname"
+              label="닉네임"
+              name="nickname"
+              type="text"
+              autoComplete="nickname"
+              value={nickname}
+              error={displayedNicknameError}
+              disabled={isSubmitting}
+              onBlur={() => setIsNicknameTouched(true)}
+              onChange={handleNicknameChange}
+            />
 
             <p
               className="user-edit-form__submit-error"
@@ -403,13 +382,7 @@ function UserEditPage() {
         </section>
       </div>
 
-      <div
-        className={`user-edit-toast${toastMessage ? " is-visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {toastMessage}
-      </div>
+      <Toast message={toastMessage} />
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}

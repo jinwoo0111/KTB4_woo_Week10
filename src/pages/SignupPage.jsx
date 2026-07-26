@@ -3,6 +3,9 @@ import { useNavigate } from "react-router";
 import { ApiError } from "../api/ApiError.js";
 import { signup as requestSignup } from "../api/authApi.js";
 import defaultProfileImage from "../assets/rescene-default-profile.jpg";
+import FormField from "../components/common/FormField.jsx";
+import Toast from "../components/common/Toast.jsx";
+import { useToast } from "../hooks/useToast.js";
 import {
   IMAGE_ACCEPT,
   validateProfileImage,
@@ -58,7 +61,6 @@ function SignupPage() {
   const navigate = useNavigate();
   const formRef = useRef(null);
   const previewUrlRef = useRef(null);
-  const toastTimerRef = useRef(null);
   const redirectTimerRef = useRef(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -75,15 +77,14 @@ function SignupPage() {
   });
   const [serverErrors, setServerErrors] = useState(EMPTY_SERVER_ERRORS);
   const [submitError, setSubmitError] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showToast, toastMessage } = useToast(SUCCESS_TOAST_DURATION);
 
   useEffect(() => () => {
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
-    window.clearTimeout(toastTimerRef.current);
     window.clearTimeout(redirectTimerRef.current);
   }, []);
 
@@ -105,15 +106,6 @@ function SignupPage() {
   };
 
   const isFormValid = Object.values(fieldErrors).every((message) => !message);
-
-  const showToast = (message, duration) => {
-    window.clearTimeout(toastTimerRef.current);
-    setToastMessage(message);
-
-    toastTimerRef.current = window.setTimeout(() => {
-      setToastMessage("");
-    }, duration);
-  };
 
   const clearRequestFeedback = () => {
     setSubmitError("");
@@ -281,101 +273,67 @@ function SignupPage() {
           </p>
         </div>
 
-        <div className="signup-form__field">
-          <label className="signup-form__label" htmlFor="signup-email">
-            이메일
-          </label>
-          <input
-            className="signup-form__input"
-            id="signup-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="이메일을 입력하세요"
-            value={email}
-            aria-describedby="signup-email-error"
-            aria-invalid={Boolean(displayedErrors.email)}
-            disabled={isSubmitting}
-            onBlur={() => handleFieldBlur("email")}
-            onChange={(event) => handleFieldChange("email", event.target.value)}
-          />
-          <p className="signup-form__helper" id="signup-email-error" aria-live="polite">
-            {displayedErrors.email}
-          </p>
-        </div>
+        <FormField
+          variant="signup"
+          id="signup-email"
+          label="이메일"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="이메일을 입력하세요"
+          value={email}
+          error={displayedErrors.email}
+          disabled={isSubmitting}
+          onBlur={() => handleFieldBlur("email")}
+          onChange={(event) => handleFieldChange("email", event.target.value)}
+        />
 
-        <div className="signup-form__field">
-          <label className="signup-form__label" htmlFor="signup-password">
-            비밀번호
-          </label>
-          <input
-            className="signup-form__input"
-            id="signup-password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="비밀번호를 입력하세요"
-            value={password}
-            aria-describedby="signup-password-error"
-            aria-invalid={Boolean(displayedErrors.password)}
-            disabled={isSubmitting}
-            onBlur={() => handleFieldBlur("password")}
-            onChange={(event) => handleFieldChange("password", event.target.value)}
-          />
-          <p className="signup-form__helper" id="signup-password-error" aria-live="polite">
-            {displayedErrors.password}
-          </p>
-        </div>
+        <FormField
+          variant="signup"
+          id="signup-password"
+          label="비밀번호"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="비밀번호를 입력하세요"
+          value={password}
+          error={displayedErrors.password}
+          disabled={isSubmitting}
+          onBlur={() => handleFieldBlur("password")}
+          onChange={(event) => handleFieldChange("password", event.target.value)}
+        />
 
-        <div className="signup-form__field">
-          <label className="signup-form__label" htmlFor="signup-password-confirm">
-            비밀번호 확인
-          </label>
-          <input
-            className="signup-form__input"
-            id="signup-password-confirm"
-            name="passwordConfirm"
-            type="password"
-            autoComplete="new-password"
-            placeholder="비밀번호를 한번 더 입력하세요"
-            value={passwordConfirm}
-            aria-describedby="signup-password-confirm-error"
-            aria-invalid={Boolean(displayedErrors.passwordConfirm)}
-            disabled={isSubmitting}
-            onBlur={() => handleFieldBlur("passwordConfirm")}
-            onChange={(event) => handleFieldChange("passwordConfirm", event.target.value)}
-          />
-          <p
-            className="signup-form__helper"
-            id="signup-password-confirm-error"
-            aria-live="polite"
-          >
-            {displayedErrors.passwordConfirm}
-          </p>
-        </div>
+        <FormField
+          variant="signup"
+          id="signup-password-confirm"
+          label="비밀번호 확인"
+          name="passwordConfirm"
+          type="password"
+          autoComplete="new-password"
+          placeholder="비밀번호를 한번 더 입력하세요"
+          value={passwordConfirm}
+          error={displayedErrors.passwordConfirm}
+          disabled={isSubmitting}
+          onBlur={() => handleFieldBlur("passwordConfirm")}
+          onChange={(event) => (
+            handleFieldChange("passwordConfirm", event.target.value)
+          )}
+        />
 
-        <div className="signup-form__field">
-          <label className="signup-form__label" htmlFor="signup-nickname">
-            닉네임
-          </label>
-          <input
-            className="signup-form__input"
-            id="signup-nickname"
-            name="nickname"
-            type="text"
-            autoComplete="nickname"
-            placeholder="닉네임을 입력하세요"
-            value={nickname}
-            aria-describedby="signup-nickname-error"
-            aria-invalid={Boolean(displayedErrors.nickname)}
-            disabled={isSubmitting}
-            onBlur={() => handleFieldBlur("nickname")}
-            onChange={(event) => handleFieldChange("nickname", event.target.value)}
-          />
-          <p className="signup-form__helper" id="signup-nickname-error" aria-live="polite">
-            {displayedErrors.nickname}
-          </p>
-        </div>
+        <FormField
+          variant="signup"
+          id="signup-nickname"
+          label="닉네임"
+          name="nickname"
+          type="text"
+          autoComplete="nickname"
+          placeholder="닉네임을 입력하세요"
+          value={nickname}
+          error={displayedErrors.nickname}
+          disabled={isSubmitting}
+          onBlur={() => handleFieldBlur("nickname")}
+          onChange={(event) => handleFieldChange("nickname", event.target.value)}
+        />
 
         <p
           className="signup-form__submit-error"
@@ -402,13 +360,7 @@ function SignupPage() {
         </button>
       </form>
 
-      <div
-        className={`signup-toast${toastMessage ? " is-visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {toastMessage}
-      </div>
+      <Toast message={toastMessage} placement="center" />
     </section>
   );
 }
