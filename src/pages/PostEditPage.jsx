@@ -221,18 +221,31 @@ function PostEditPage() {
     setImageError("");
   };
 
-  const handleImageRemove = () => {
+  const handleSelectedImageCancel = () => {
     clearPreviewUrl();
     uploadedImageRef.current = null;
     setImageFile(null);
     setPreviewUrl("");
-    setRemoveContentImage(Boolean(post?.contentImage));
+    setRemoveContentImage(false);
     setImageError("");
     setSubmitError("");
 
     if (imageInputRef.current) {
       imageInputRef.current.value = "";
     }
+  };
+
+  const handleExistingImageRemove = () => {
+    setRemoveContentImage(true);
+    setImageError("");
+    setSubmitError("");
+  };
+
+  const handleExistingImageRemoveCancel = () => {
+    setRemoveContentImage(false);
+    setHasExistingImageFailed(false);
+    setImageError("");
+    setSubmitError("");
   };
 
   const focusFirstInvalidField = () => {
@@ -445,14 +458,34 @@ function PostEditPage() {
               disabled={isSubmitting}
               onChange={handleImageChange}
             />
-            {(imageFile || existingImageUrl) && (
+            {imageFile && (
+              <button
+                className="post-form-image__cancel"
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleSelectedImageCancel}
+              >
+                선택 취소
+              </button>
+            )}
+            {!imageFile && existingImageUrl && (
               <button
                 className="post-form-image__remove"
                 type="button"
                 disabled={isSubmitting}
-                onClick={handleImageRemove}
+                onClick={handleExistingImageRemove}
               >
-                이미지 삭제
+                기존 이미지 삭제
+              </button>
+            )}
+            {!imageFile && removeContentImage && post?.contentImage && (
+              <button
+                className="post-form-image__cancel"
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleExistingImageRemoveCancel}
+              >
+                삭제 취소
               </button>
             )}
           </div>
