@@ -4,6 +4,7 @@ import {
   removeAccessToken,
 } from '../utils/tokenStorage.js'
 import { ApiError } from './ApiError.js'
+import { notifyAuthInvalidated } from './authSessionEvents.js'
 
 const AUTH_MODES = new Set(['none', 'optional', 'required'])
 
@@ -147,7 +148,14 @@ async function sendRequest(path, options, token, canRetryWithoutAuth) {
   }
 
   if (response.status === 401 && canRetryWithoutAuth) {
+    const latestAccessToken = getAccessToken()
+
+    if (latestAccessToken && latestAccessToken !== token) {
+      return sendRequest(path, options, latestAccessToken, true)
+    }
+
     removeAccessToken()
+    notifyAuthInvalidated(token)
     return sendRequest(path, options, null, false)
   }
 

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { login as requestLogin } from "../api/authApi.js";
 import { ApiError } from "../api/ApiError.js";
+import { subscribeToAuthInvalidation } from "../api/authSessionEvents.js";
 import { getCurrentUser } from "../api/userApi.js";
 import {
   getAccessToken,
@@ -52,6 +53,20 @@ function ignoreHandledAuthError() {
 function AuthProvider({ children }) {
   const [authState, setAuthState] = useState(createInitialAuthState);
   const authCheckRef = useRef(null);
+
+  useEffect(() => {
+    return subscribeToAuthInvalidation((invalidatedToken) => {
+      if (authCheckRef.current?.token === invalidatedToken) {
+        authCheckRef.current = null;
+      }
+
+      setAuthState((currentState) => (
+        currentState.accessToken === invalidatedToken
+          ? createGuestAuthState()
+          : currentState
+      ));
+    });
+  }, []);
 
   const handleAuthCheckError = useCallback((error, tokenBeingChecked) => {
     if (
