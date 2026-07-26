@@ -87,7 +87,7 @@ function AuthProvider({ children }) {
 
       return {
         ...currentState,
-        authStatus: AUTH_STATUS.CHECKING,
+        authStatus: AUTH_STATUS.ERROR,
         currentUser: null,
         authError: error,
       };
